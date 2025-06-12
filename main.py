@@ -16,6 +16,17 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("A Day in the Life of a New Yorker")
 clock = pygame.time.Clock()
+player_direction = "down"  # Default facing down
+
+
+
+player_images = {
+    "up": pygame.image.load("player_up.png").convert_alpha(),
+    "down": pygame.image.load("player_down.png").convert_alpha(),
+    "left": pygame.image.load("player_left.png").convert_alpha(),
+    "right": pygame.image.load("player_right.png").convert_alpha()
+}
+
 
 # --- Player Setup ---
 player_pos = [150, 150]  # Start safely inside the room
@@ -101,12 +112,17 @@ while running:
     dx = dy = 0
     if keys[pygame.K_LEFT] or keys[pygame.K_a]:
         dx = -PLAYER_SPEED
-    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        player_direction = "left"
+    elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
         dx = PLAYER_SPEED
-    if keys[pygame.K_UP] or keys[pygame.K_w]:
+        player_direction = "right"
+    elif keys[pygame.K_UP] or keys[pygame.K_w]:
         dy = -PLAYER_SPEED
-    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+        player_direction = "up"
+    elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
         dy = PLAYER_SPEED
+        player_direction = "down"
+
 
     # Attempt X movement first
     future_rect_x = pygame.Rect(player_pos[0] + dx - PLAYER_RADIUS, player_pos[1] - PLAYER_RADIUS, PLAYER_RADIUS * 2, PLAYER_RADIUS * 2)
@@ -126,7 +142,9 @@ while running:
         pygame.draw.rect(screen, WHITE if wall == walls[0] else BLACK, wall)
 
     # Draw player
-    pygame.draw.circle(screen, PLAYER_COLOR, player_pos, PLAYER_RADIUS)
+    player_sprite = player_images[player_direction]
+    sprite_rect = player_sprite.get_rect(center=player_pos)
+    screen.blit(player_sprite, sprite_rect)
 
     # Draw future_rect for debugging (optional)
     debug_rect = pygame.Rect(player_pos[0] - PLAYER_RADIUS, player_pos[1] - PLAYER_RADIUS, PLAYER_RADIUS * 2, PLAYER_RADIUS * 2)
