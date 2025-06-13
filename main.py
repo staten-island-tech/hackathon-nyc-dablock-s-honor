@@ -51,6 +51,17 @@ def run_cutscene(screen, clock, font, dialogue_lines):
     timer = pygame.time.get_ticks()
     typing_speed = 50  # ms per character
     done = False
+    key_released = True
+    prompt_delay_timer = None
+    prompt_delay_duration = 1000  # 1.5 seconds
+    showing_prompt = False
+    waiting_for_key = False
+    fade_alpha = 255
+    fade_speed = 5
+    fading_in = True
+
+    fade_surface = pygame.Surface((WIDTH, HEIGHT))
+    fade_surface.fill((0, 0, 0))
 
     while not done:
         screen.fill((30, 30, 30))
@@ -59,45 +70,65 @@ def run_cutscene(screen, clock, font, dialogue_lines):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                # If current line is done
-                if text_index < len(dialogue_lines) and letter_index >= len(dialogue_lines[text_index]):
+            elif event.type == pygame.KEYUP:
+                key_released = True
+            elif event.type == pygame.KEYDOWN and key_released:
+                key_released = False
+
+                if showing_prompt and waiting_for_key:
                     text_index += 1
                     letter_index = 0
+                    prompt_delay_timer = None
+                    showing_prompt = False
+                    waiting_for_key = False
+                    fading_in = (text_index == 0)  # Optional: only fade first line
 
                 if text_index >= len(dialogue_lines):
                     done = True
                     break
-                else:
-                    # Fast forward typing effect
-                    letter_index = len(dialogue_lines[text_index])
 
-        # Only render if there's still dialogue left
+        # Typewriter logic
         if text_index < len(dialogue_lines):
-            if letter_index < len(dialogue_lines[text_index]):
+            line = dialogue_lines[text_index]
+
+            if letter_index < len(line):
                 if pygame.time.get_ticks() - timer > typing_speed:
                     letter_index += 1
                     timer = pygame.time.get_ticks()
 
-            current_line = dialogue_lines[text_index][:letter_index]
-            text_surface = font.render(current_line, True, (255, 255, 255))
-            screen.blit(text_surface, (50, HEIGHT // 2))
+            rendered_text = font.render(line[:letter_index], True, WHITE)
+            screen.blit(rendered_text, (50, HEIGHT // 2))
 
-            if letter_index >= len(dialogue_lines[text_index]):
-                prompt = font.render("Press any key to continue...", True, (180, 180, 180))
-                screen.blit(prompt, (50, HEIGHT // 2 + 40))
+            if letter_index >= len(line):
+                if prompt_delay_timer is None:
+                    prompt_delay_timer = pygame.time.get_ticks()
+
+                elif pygame.time.get_ticks() - prompt_delay_timer >= prompt_delay_duration:
+                    prompt = font.render("Press any key to continue...", True, (180, 180, 180))
+                    screen.blit(prompt, (50, HEIGHT // 2 + 40))
+                    showing_prompt = True
+                    waiting_for_key = True
+
+        # Fade only at start
+        if text_index == 0 and fading_in:
+            fade_surface.set_alpha(fade_alpha)
+            screen.blit(fade_surface, (0, 0))
+            fade_alpha -= fade_speed
+            if fade_alpha <= 0:
+                fading_in = False
 
         pygame.display.flip()
         clock.tick(FPS)
 
+
+
 font = pygame.font.SysFont(None, 32)
 dialogue = [
-    "Ugh... another day in the city.",
-    "Gotta get ready and catch the subway.",
-    "Hope the coffee place isn’t packed again..."
+    "Dang...those cars had me awake all night.",
+    "Gotta catch the N train before it leaves...",
+    "Might as well get a coffee before I go to work."
 ]
 run_cutscene(screen, clock, font, dialogue)
-
 
 # --- Game Loop ---
 running = True
