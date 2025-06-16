@@ -1,7 +1,8 @@
 import pygame
-from moviepy.editor import VideoFileClip
 import sys
 import math
+import numpy as np  # Required for movie frame conversion
+from moviepy import VideoFileClip
 
 # --- Settings ---
 WIDTH, HEIGHT = 800, 600
@@ -325,17 +326,30 @@ def run_cutscene(screen, clock, font, dialogue_lines):
         clock.tick(FPS)
         
 def play_jumpscare(screen, video_path):
+    from moviepy import VideoFileClip
+
     clip = VideoFileClip(video_path)
-    clip = clip.resize((WIDTH, HEIGHT))
-    for frame in clip.iter_frames(fps=30, with_times=False):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
+
+    # Set size to your pygame screen size
+    WIDTH, HEIGHT = screen.get_size()
+
+    for frame in clip.iter_frames(fps=clip.fps, dtype='uint8'):
+        # Convert frame (numpy array) to pygame surface
         frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0,1))
-        screen.blit(frame_surface, (0,0))
+        
+        # Resize the surface to fit screen size
+        frame_surface = pygame.transform.scale(frame_surface, (WIDTH, HEIGHT))
+        
+        # Display the frame
+        screen.blit(frame_surface, (0, 0))
         pygame.display.update()
-    clip.close()
+        
+        # Maintain frame rate
+        pygame.time.wait(int(1000 / clip.fps))
+
+    pygame.quit()
+    sys.exit()
+
 
 # --- Main Game Loop ---
 def main():
