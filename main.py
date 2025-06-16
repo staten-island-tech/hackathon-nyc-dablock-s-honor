@@ -307,7 +307,7 @@ def run_cutscene(screen, clock, font, dialogue_lines):
                     prompt_delay_timer = now
                 elif now - prompt_delay_timer >= prompt_delay_duration:
                     if (now // 800) % 2 == 0:
-                        prompt_text = font.render("Press Space to Continue", True, WHITE)
+                        prompt_text = font.render("Press Any Key to Continue", True, WHITE)
                         screen.blit(prompt_text, (50, HEIGHT // 2 + 40))
                     waiting_for_key = True
 
@@ -489,10 +489,12 @@ def main():
         else:
             draw_city(screen, camera_x)
             # Draw Big Pizza Place
+        # Draw Big Pizza Place ONLY if it's near camera (within visible screen)
+        building_screen_rect = big_pizza_rect.move(-camera_x, 0)
+        if -200 < building_screen_rect.x < WIDTH:
             pizza_building_color = (255, 50, 50)
             pizza_border_color = (180, 0, 0)
 
-            building_screen_rect = big_pizza_rect.move(-camera_x, 0)
             pygame.draw.rect(screen, pizza_building_color, building_screen_rect)
             pygame.draw.rect(screen, pizza_border_color, building_screen_rect, 4)
 
@@ -582,13 +584,27 @@ def main():
 
 
         # Draw interaction prompt text ONLY inside house near door (NO prompt outside)
+        # --- Interaction Prompt (if near something interactive) ---
         if can_interact:
+            prompt_text = "Press [E] to Enter" if not inside_house else "Press [E] to Exit"
+
+            # Render prompt with a semi-transparent background
+            prompt_surface = font.render(prompt_text, True, WHITE)
+            prompt_width = prompt_surface.get_width() + 10
+            prompt_height = prompt_surface.get_height() + 6
+            prompt_bg = pygame.Surface((prompt_width, prompt_height), pygame.SRCALPHA)
+            prompt_bg.fill((0, 0, 0, 180))  # semi-transparent black background
+
+            # Position prompt above player
             if inside_house:
-                instruction = font.render("Press E to Exit", True, WHITE)
-                screen.blit(instruction, (player_pos[0] - 20, player_pos[1] - 30))
+                x = player_pos[0] + PLAYER_SIZE[0] // 2 - prompt_width // 2
+                y = player_pos[1] - 40
             else:
-                instruction = font.render("Press E to Enter Pizza", True, WHITE)
-                screen.blit(instruction, (WIDTH // 2 - 60, player_pos[1] - 30))
+                x = WIDTH // 2 - prompt_width // 2
+                y = player_pos[1] - 40
+
+            screen.blit(prompt_bg, (x, y))
+            screen.blit(prompt_surface, (x + 5, y + 3))
 
 
         pygame.display.flip()
@@ -597,8 +613,8 @@ def main():
 
 # --- Run game ---
 cutscene_text = [
-    "This is a day in the life of a New Yorker...",
-    "A world of hustle, bustle, and endless stories."
+    "Ugh...those cars had me awake all night.",
+    "I'm hungry...might get pizza before I go to work."
 ]
 
 run_cutscene(screen, clock, font, cutscene_text)
